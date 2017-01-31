@@ -16,9 +16,12 @@
 #
 import webapp2
 
+head, header, form = ("<head><title>User Signup</title></head>", "<h2>User Signup</h2>",
+                      "<form name=\"signup\"><label>Username<input type=\"username\"/></label></form>")
+
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('Hello world!')
+        self.response.write(head + header + form)
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler)
