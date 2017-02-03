@@ -26,25 +26,51 @@ layout_form_end = "</tbody></table><input type=\"submit\" value=\"Submit\"/></fo
 
 
 class MainHandler(webapp2.RequestHandler):
-    def get(self, name_error="", pw_error="", email_error="", name="", email=""):
+    def get(self, name_error="", pw_error="", verify_error="", email_error="", name="", email=""):
 
         pw_error_element = "<span class='error' style=\"color: red;\">" + pw_error + "</span>"
+        verify_error_element = "<span class='error' style=\"color: red;\">" + verify_error + "</span>"
         name_error_element = "<span class='error' style=\"color: red;\">" + name_error + "</span>"
         email_error_element = "<span class='error' style=\"color: red;\">" + email_error + "</span>"
         
-        un = ("<tr><td><label>Username</label></td><td><input name=\"username\" type=\"username\" required=\"\" value=\""
-              + name + "\"/>" + name_error_element + "</td></tr>")
-        pw = "<tr><td><label>Password</label></td><td><input name=\"password\" type=\"password\" required=\"\"/></td></tr>"
-        vf = ("<tr><td><label>Verify Password</label></td><td><input name=\"verify\" type=\"password\" required=\"\"/>"
-              + pw_error_element + "</td></tr>")
-        email = ("<tr><td><label>Email (optional)</label></td><td><input name=\"email\" type\"email\" value=\""
-                 + email + "\"/>" + email_error_element + "</td></tr>")
+        un = ("""<tr>
+                   <td>
+                     <label>Username</label>
+                   </td>
+                   <td>
+                     <input name=\"username\" type=\"username\" required=\"\" value=\"""" 
+                     + name + "\"/>" + name_error_element + """ 
+                   </td>
+                 </tr>""")
+        pw = """<tr>
+                  <td>
+                    <label>Password</label>
+                  </td>
+                  <td>
+                    <input name=\"password\" type=\"password\" required=\"\"/>""" + pw_error_element + """
+                  </td>
+                </tr>"""
+        vf = ("""<tr>
+                   <td>
+                     <label>Verify Password</label>
+                   </td>
+                   <td>
+                     <input name=\"verify\" type=\"password\" required=\"\"/>""" + verify_error_element + """
+                   </td>
+                 </tr>""")
+        email_address = ("""<tr>
+                              <td>
+                                <label>Email (optional)</label></td><td><input name=\"email\" type\"email\" value=\"""" 
+                                + email + "\"/>" + email_error_element + """
+                              </td>
+                            </tr>""")
 
         page_top = head + header + layout_form_start
-        content = page_top + un + pw + vf + email + layout_form_end
+        content = page_top + un + pw + vf + email_address + layout_form_end
         self.response.write(content)
 
     def post(self):
+        name_error, pw_error, verify_error, email_error = "", "", "", ""
         password = cgi.escape(self.request.get("password"))
         verify = cgi.escape(self.request.get("verify"))
         name = cgi.escape(self.request.get("username"))
@@ -54,17 +80,21 @@ class MainHandler(webapp2.RequestHandler):
         name_test = re.search("[^A-Za-z]", name)
         email_test = re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
-        if name_test:
-            name_error = "Username has invalid characters."
-            self.get(name_error, "", "", name, email)
+        if name_test or len(name) < 3:
+            name_error = "Username is invalid."
+            self.get(name_error, pw_error, verify_error, email_error, name, email)
+
+        elif len(password) < 3:
+            pw_error = "Password is too short."
+            self.get(name_error, pw_error, verify_error, email_error, name, email)
+
+        elif password != verify:
+            verify_error = "Passwords do not match."
+            self.get(name_error, pw_error, verify_error, email_error, name, email)
 
         elif not email_test and email != "":
             email_error = "Email address is invalid."
-            self.get("", "", email_error, name, email)
-
-        elif password != verify:
-            pw_error = "Passwords do not match."
-            self.get("", pw_error, "", name, email)
+            self.get(name_error, pw_error, verify_error, email_error, name, email)
 
         else:
             self.response.write('Welcome, ' + name)
